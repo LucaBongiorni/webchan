@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -41,13 +40,14 @@ func GetFiles(w http.ResponseWriter, r *http.Request) {
 	var data []byte
 
 	for i, f := range files_info {
+		if f.IsDir() {
+			continue
+		}
 		data, err = ioutil.ReadFile("./upload/" + f.Name())
 		CheckError(err)
 		files[i] = filestruct{Name: f.Name(), Data: data}
 		os.Remove("./upload/" + f.Name())
 	}
-
-	//filesstruct := []filestruct{{Name: "onefile", Data: []byte("Super Inhalt der in \"onefile\" steht.")}, {Name: "anotherfile.txt", Data: []byte("Noch mehr cooler Scheisz!")}}
 
 	tmpl, err := template.ParseFiles("getfiles.jsonp")
 	CheckError(err)
@@ -57,7 +57,6 @@ func GetFiles(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.Execute(w, templdata{Callback: mux.Vars(r)["callback"], Files: string(files_json)})
 	CheckError(err)
-
 }
 
 // Serves the file index.html
@@ -79,24 +78,16 @@ func ServeJS(w http.ResponseWriter, r *http.Request) {
 
 // Recieves Files via Multipart upload and saves them in the "download" Folder
 func Upload(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(20000)
 	var (
-		file *os.File
-		err  error
-		data []byte
+		err   error
+		files []filestruct
 	)
 
-	for key, value := range r.MultipartForm.Value {
-		file, err = os.OpenFile("./download/"+key, os.O_WRONLY|os.O_CREATE, 06600)
-		CheckError(err)
+	err = json.NewDecoder(r.Body).Decode(&files)
+	CheckError(err)
 
-		data, err = base64.StdEncoding.DecodeString(value[0])
-		CheckError(err)
-
-		_, err = file.Write(data)
-		CheckError(err)
-
-		err = file.Close()
+	for _, f := range files {
+		err = ioutil.WriteFile("./download/"+f.Name, f.Data, 0666)
 		CheckError(err)
 	}
 

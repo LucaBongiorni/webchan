@@ -5,26 +5,20 @@ var remoteHostname = "localhost:8080"
 function uploadFiles(files, url)
 {
     // Create a formdata object and add the files
-    var data = new FormData();
-    $.each(files, function(index, value)
-    {
-        data.append(value.Name, value.Data);
-    });
-
-    $.ajax({
-        url: url,
-        type: 'POST',
-        data: data,
-        cache: false,
-        dataType: 'json',
-        processData: false, // Don't process the files
-        contentType: false, // Set content type to false as jQuery will tell the server its a query string request
-      });
+    if(files.length > 0){
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify(files),
+            cache: false,
+            contentType: 'application/json; charset=UTF-8', // This is the money shot
+          });
+    }
 }
 
 function pollAndPush() {
 	// Get from remote upload to device
-    $.getJSON( "http://" + remoteHostname + "/getfiles/callback=?", function( files ) {
+    $.getJSON( "http://" + remoteHostname + "getfiles/callback=?", function( files ) {
     					console.log(files);
 						uploadFiles(files, "http://" + deviceHostname + "/upload");
 	});
