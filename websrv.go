@@ -32,6 +32,8 @@ type templdata struct {
 // via JSONP
 func GetFiles(w http.ResponseWriter, r *http.Request) {
 	// TODO: Read files from upload folder
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	files_info, err := ioutil.ReadDir("./upload")
 	CheckError(err)
 
@@ -82,6 +84,7 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 		err   error
 		files []filestruct
 	)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	err = json.NewDecoder(r.Body).Decode(&files)
 	CheckError(err)
