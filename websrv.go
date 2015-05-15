@@ -3,12 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"text/template"
+
+	"github.com/codegangsta/negroni"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 func CheckError(err error) {
@@ -84,7 +87,6 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 		err   error
 		files []filestruct
 	)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	err = json.NewDecoder(r.Body).Decode(&files)
 	CheckError(err)
@@ -98,12 +100,15 @@ func Upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	mx := mux.NewRouter()
 
+	mx := mux.NewRouter()
 	mx.HandleFunc("/{js_filename}.js", ServeJS)
 	mx.HandleFunc("/getfiles/callback={callback}", GetFiles)
 	mx.HandleFunc("/index", Index)
 	mx.HandleFunc("/upload", Upload)
 
-	http.ListenAndServe(":"+os.Getenv("PORT"), mx)
+	n := negroni.Classic()
+	n.UseHandler(cors.Default().Handler(mx))
+
+	n.Run(":" + os.Getenv("PORT"))
 }
