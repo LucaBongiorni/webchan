@@ -34,9 +34,6 @@ type templdata struct {
 // Serves Files from the "upload" folder as JSON array
 // via JSONP
 func GetFiles(w http.ResponseWriter, r *http.Request) {
-	// TODO: Read files from upload folder
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	files_info, err := ioutil.ReadDir("./upload")
 	CheckError(err)
 
@@ -54,7 +51,7 @@ func GetFiles(w http.ResponseWriter, r *http.Request) {
 		os.Remove("./upload/" + f.Name())
 	}
 
-	tmpl, err := template.ParseFiles("getfiles.jsonp")
+	tmpl, err := template.ParseFiles("./static/getfiles.jsonp")
 	CheckError(err)
 
 	files_json, err := json.Marshal(files)
@@ -66,7 +63,7 @@ func GetFiles(w http.ResponseWriter, r *http.Request) {
 
 // Serves the file index.html
 func Index(w http.ResponseWriter, r *http.Request) {
-	file, err := os.Open("index.html")
+	file, err := os.Open("./static/index.html")
 	defer file.Close()
 	CheckError(err)
 
@@ -74,14 +71,14 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeJS(w http.ResponseWriter, r *http.Request) {
-	file, err := os.Open(mux.Vars(r)["js_filename"] + ".js")
+	file, err := os.Open("./js/" + mux.Vars(r)["js_filename"] + ".js")
 	defer file.Close()
 	CheckError(err)
 
 	io.Copy(w, file)
 }
 
-// Recieves Files via Multipart upload and saves them in the "download" Folder
+// Recieves Files via JSON Post upload and saves them in the "download" Folder
 func Upload(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
